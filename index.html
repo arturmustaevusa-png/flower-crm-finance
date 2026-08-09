@@ -179,10 +179,7 @@
   .cancel-btn:hover{border-color:var(--void);color:var(--void);}
   .row.editing{outline:2px solid var(--gold);outline-offset:1px;}
 
-  .type-legend{display:flex;gap:16px;flex-wrap:wrap;}
-  .type-legend span{font-size:12px;color:var(--ink-soft);display:flex;align-items:center;gap:6px;}
-  .type-legend i{width:12px;height:12px;border-radius:4px;display:inline-block;}
-  .rows-head{display:flex;justify-content:space-between;align-items:center;margin:2px 2px 14px;flex-wrap:wrap;gap:10px;}
+  .rows-head{display:flex;justify-content:flex-end;align-items:center;margin:2px 2px 14px;flex-wrap:wrap;gap:10px;}
   .year-tabs{display:flex;gap:6px;flex-wrap:wrap;margin:2px 2px 14px;}
   .year-tab{
     background:var(--card);border:1.5px solid var(--line);color:var(--ink-soft);
@@ -204,14 +201,14 @@
   .row{
     background:var(--card);border-radius:12px;box-shadow:var(--shadow);
     padding:13px 16px;display:grid;position:relative;
-    grid-template-columns:90px 96px 1fr 100px 100px auto;
+    grid-template-columns:90px auto 1fr 100px 100px auto;
     align-items:center;gap:12px;border-left:5px solid var(--gray);
     cursor:pointer;transition:box-shadow .15s, transform .15s;
   }
   .row:hover{box-shadow:0 1px 2px rgba(22,36,28,.04), 0 10px 26px -10px rgba(22,36,28,.22);transform:translateY(-1px);}
-  .row.monthly{border-left-color:var(--leaf);}
-  .row.yearly{border-left-color:var(--gold);}
-  .row.onetime{border-left-color:var(--gray);}
+  .row.status-paid{border-left-color:var(--leaf);}
+  .row.status-plan{border-left-color:var(--gold);}
+  .row.status-overdue{border-left-color:var(--void);}
   .row .date{font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--ink-soft);}
   .row .title{font-size:14px;font-weight:600;}
   .row .title small{display:block;font-weight:400;color:var(--ink-soft);font-size:12px;margin-top:1px;}
@@ -223,9 +220,14 @@
   .pill.roman{background:var(--roman-tint);color:var(--roman);}
   .pill.none{background:var(--gray-tint);color:var(--gray);}
   .amount{font-family:'Fraunces',serif;font-weight:600;font-size:16px;text-align:right;}
+  .badges{display:flex;gap:6px;flex-wrap:wrap;}
   .status{font-size:11px;font-weight:700;padding:4px 8px;border-radius:7px;text-align:center;white-space:nowrap;}
   .status.paid{background:var(--leaf-tint);color:var(--leaf-deep);}
-  .status.unpaid{background:var(--void-tint);color:var(--void);}
+  .status.plan{background:var(--gold-tint);color:var(--gold);}
+  .status.overdue{background:var(--void-tint);color:var(--void);}
+  .status.type-monthly{background:var(--void-tint);color:var(--void);}
+  .status.type-yearly{background:var(--gold-tint);color:var(--gold);}
+  .status.type-onetime{background:var(--roman-tint);color:var(--roman);}
   .del{background:none;border:none;color:var(--line);cursor:pointer;font-size:16px;padding:4px;position:relative;z-index:2;}
   .del:hover{color:var(--artur);}
 
@@ -269,7 +271,8 @@
       padding:14px 44px 14px 16px;
     }
     .row .date{order:1;}
-    .row .status{order:2;align-self:flex-start;width:fit-content;
+    .row .badges{order:2;}
+    .row .badges .status{
       background:transparent!important;border:1.5px solid currentColor;padding:3px 10px;}
     .row .title{order:3;}
     .row .pill{order:4;align-self:flex-start;width:fit-content;
@@ -295,7 +298,6 @@
     </div>
     <div class="header-actions">
       <button class="conn-badge" id="trashBadge" title="Журнал удалённых записей">🗑 История<span id="trashCount"></span></button>
-      <button class="conn-badge" id="connBadge" title="Настройки подключения">⚙ <span id="connLabel">не подключено</span></button>
     </div>
   </div>
   <p class="sub">Каждый платёж — своей строкой. Считается автоматически: кто сколько внёс и кто кому должен довнести.</p>
@@ -308,23 +310,6 @@
       <input id="trashPass" type="password" placeholder="Пароль для очистки">
       <button class="settings-save" id="trashClearBtn">Очистить журнал</button>
       <span class="settings-status" id="trashClearStatus"></span>
-    </div>
-  </div>
-
-  <div class="settings-panel hidden" id="settingsPanel">
-    <p class="settings-title">Подключение к GitHub</p>
-    <p class="settings-hint">Данные будут храниться в JSON-файле в вашем репозитории — так же, как в редакторе портфолио. Токен хранится только в этом браузере.</p>
-    <div class="settings-grid">
-      <div class="field"><label>Токен GitHub (fine-grained, Contents: Read & write)</label><input id="ghToken" type="password" placeholder="github_pat_..."></div>
-      <div class="field"><label>Владелец</label><input id="ghOwner" placeholder="arturmustaevusa-png"></div>
-      <div class="field"><label>Репозиторий</label><input id="ghRepo" placeholder="flower-crm-finance"></div>
-      <div class="field"><label>Ветка</label><input id="ghBranch" placeholder="main" value="main"></div>
-      <div class="field"><label>Файл</label><input id="ghPath" placeholder="payments.json" value="payments.json"></div>
-    </div>
-    <div class="settings-actions">
-      <button class="settings-save" id="ghSave">Сохранить и проверить</button>
-      <button class="settings-disconnect" id="ghDisconnect">Отключить</button>
-      <span class="settings-status" id="ghStatus"></span>
     </div>
   </div>
 
@@ -388,11 +373,6 @@
   <div class="year-tabs" id="statusTabs"></div>
 
   <div class="rows-head">
-    <div class="type-legend">
-      <span><i style="background:var(--leaf)"></i>Ежемесячный</span>
-      <span><i style="background:var(--gold)"></i>Ежегодный</span>
-      <span><i style="background:var(--gray)"></i>Разовый</span>
-    </div>
     <button class="export-btn" id="exportBtn">⬇ Скачать таблицей (CSV)</button>
   </div>
 
@@ -409,8 +389,8 @@ let editingId = null;
 
 function statusInfo(p){
   if(p.status === 'paid') return {cls:'paid', label:'Оплачено'};
-  if(p.date && p.date < todayStr()) return {cls:'unpaid', label:'Оплата просрочена'};
-  return {cls:'unpaid', label:'План'};
+  if(p.date && p.date < todayStr()) return {cls:'overdue', label:'Оплата просрочена'};
+  return {cls:'plan', label:'План'};
 }
 
 const DEFAULT_PAYMENTS = [
@@ -448,12 +428,14 @@ function renderStatusTabs(){
   });
 }
 
-function getGh(){
-  try{ return JSON.parse(localStorage.getItem('ghSettings') || 'null'); }
-  catch(e){ return null; }
-}
-function setGh(cfg){ localStorage.setItem('ghSettings', JSON.stringify(cfg)); }
-function clearGh(){ localStorage.removeItem('ghSettings'); }
+const GH_CONFIG = {
+  token: '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',
+  owner: 'arturmustaevusa-png',
+  repo: 'flower-crm-finance',
+  branch: 'main',
+  path: 'payments.json',
+};
+function getGh(){ return GH_CONFIG; }
 
 function ghUrl(cfg){
   return `https://api.github.com/repos/${cfg.owner}/${cfg.repo}/contents/${cfg.path}`;
@@ -491,15 +473,6 @@ async function ghPutFile(cfg, json, sha, message){
   return data.content.sha;
 }
 
-function setConnLabel(mode, extra){
-  const badge = document.getElementById('connBadge');
-  const label = document.getElementById('connLabel');
-  storageMode = mode;
-  if(mode === 'github'){ badge.classList.add('on'); label.textContent = extra || 'GitHub подключён'; }
-  else if(mode === 'claude'){ badge.classList.remove('on'); label.textContent = 'локально в Claude'; }
-  else { badge.classList.remove('on'); label.textContent = 'не подключено'; }
-}
-
 function normalizeStore(raw){
   if(!raw) return { payments: DEFAULT_PAYMENTS, trash: [] };
   if(Array.isArray(raw)) return { payments: raw, trash: [] };
@@ -507,41 +480,34 @@ function normalizeStore(raw){
 }
 
 async function load(){
-  const ghCfg = getGh();
-  if(ghCfg && ghCfg.token && ghCfg.owner && ghCfg.repo){
-    try{
-      const {json, sha} = await ghFetchFile(ghCfg);
-      ghSha = sha;
-      if(json){
-        const norm = normalizeStore(json);
-        payments = norm.payments;
-        trash = norm.trash;
-      } else {
-        payments = DEFAULT_PAYMENTS;
-        trash = [];
-        ghSha = await ghPutFile(ghCfg, {payments, trash}, null, 'init payments.json');
-      }
-      setConnLabel('github', `${ghCfg.owner}/${ghCfg.repo}`);
-      render();
-      return;
-    }catch(e){
-      console.error(e);
-      setConnLabel('none');
-      document.getElementById('ghStatus').textContent = 'Ошибка подключения: ' + e.message;
-      document.getElementById('ghStatus').className = 'settings-status err';
-      document.getElementById('settingsPanel').classList.remove('hidden');
+  try{
+    const {json, sha} = await ghFetchFile(GH_CONFIG);
+    ghSha = sha;
+    if(json){
+      const norm = normalizeStore(json);
+      payments = norm.payments;
+      trash = norm.trash;
+    } else {
+      payments = DEFAULT_PAYMENTS;
+      trash = [];
+      ghSha = await ghPutFile(GH_CONFIG, {payments, trash}, null, 'init payments.json');
     }
+    storageMode = 'github';
+    render();
+    return;
+  }catch(e){
+    console.error('GitHub load error', e);
   }
   try{
     const res = await window.storage.get('payments', true);
     const norm = normalizeStore(res && res.value ? JSON.parse(res.value) : null);
     payments = norm.payments;
     trash = norm.trash;
-    setConnLabel('claude');
+    storageMode = 'claude';
   }catch(e){
     payments = DEFAULT_PAYMENTS;
     trash = [];
-    setConnLabel('none');
+    storageMode = 'none';
   }
   if(!payments.length) payments = DEFAULT_PAYMENTS;
   render();
@@ -549,16 +515,13 @@ async function load(){
 
 async function save(){
   if(storageMode === 'github'){
-    const cfg = getGh();
-    if(cfg){
-      try{
-        ghSha = await ghPutFile(cfg, {payments, trash}, ghSha, 'update payments');
-        return;
-      }catch(e){
-        console.error('github save error', e);
-        alert('Не удалось сохранить в GitHub: ' + e.message);
-        return;
-      }
+    try{
+      ghSha = await ghPutFile(GH_CONFIG, {payments, trash}, ghSha, 'update payments');
+      return;
+    }catch(e){
+      console.error('github save error', e);
+      alert('Не удалось сохранить в GitHub: ' + e.message);
+      return;
     }
   }
   try{ await window.storage.set('payments', JSON.stringify({payments, trash}), true); }
@@ -601,49 +564,6 @@ function renderTrash(){
   `).join('');
 }
 
-document.getElementById('connBadge').addEventListener('click', ()=>{
-  document.getElementById('settingsPanel').classList.toggle('hidden');
-});
-document.getElementById('ghSave').addEventListener('click', async ()=>{
-  const cfg = {
-    token: document.getElementById('ghToken').value.trim(),
-    owner: document.getElementById('ghOwner').value.trim(),
-    repo: document.getElementById('ghRepo').value.trim(),
-    branch: document.getElementById('ghBranch').value.trim() || 'main',
-    path: document.getElementById('ghPath').value.trim() || 'payments.json',
-  };
-  const statusEl = document.getElementById('ghStatus');
-  if(!cfg.token || !cfg.owner || !cfg.repo){
-    statusEl.textContent = 'Заполни токен, владельца и репозиторий';
-    statusEl.className = 'settings-status err';
-    return;
-  }
-  statusEl.textContent = 'Проверяю...';
-  statusEl.className = 'settings-status';
-  try{
-    const {json, sha} = await ghFetchFile(cfg);
-    setGh(cfg);
-    ghSha = sha;
-    payments = json || payments;
-    if(!json){ ghSha = await ghPutFile(cfg, payments, null, 'init payments.json'); }
-    setConnLabel('github', `${cfg.owner}/${cfg.repo}`);
-    statusEl.textContent = 'Подключено ✓';
-    statusEl.className = 'settings-status ok';
-    render();
-  }catch(e){
-    statusEl.textContent = 'Ошибка: ' + e.message;
-    statusEl.className = 'settings-status err';
-  }
-});
-document.getElementById('ghDisconnect').addEventListener('click', ()=>{
-  clearGh();
-  ghSha = null;
-  setConnLabel('none');
-  document.getElementById('ghStatus').textContent = 'Отключено';
-  document.getElementById('ghStatus').className = 'settings-status';
-  load();
-});
-
 function render(){
   renderStatusTabs();
   const rowsEl = document.getElementById('rows');
@@ -655,12 +575,15 @@ function render(){
   visible.slice().sort((a,b)=>(b.date||'').localeCompare(a.date||'')).forEach(p=>{
     const div = document.createElement('div');
     const info = statusInfo(p);
-    div.className = 'row ' + p.type;
+    div.className = 'row status-' + info.cls;
     div.dataset.id = p.id;
     div.innerHTML = `
       <div class="date">${p.date ? p.date.split('-').reverse().join('.') : '—'}</div>
-      <div class="status ${info.cls}">${info.label}</div>
-      <div class="title">${p.title}${p.note ? `<small>${p.note} · ${TYPE_LABEL[p.type]}</small>` : `<small>${TYPE_LABEL[p.type]}</small>`}</div>
+      <div class="badges">
+        <span class="status ${info.cls}">${info.label}</span>
+        <span class="status type-${p.type}">${TYPE_LABEL[p.type]}</span>
+      </div>
+      <div class="title">${p.title}${p.note ? `<small>${p.note}</small>` : ''}</div>
       <div class="pill ${p.who||'none'}">${WHO_LABEL[p.who]}</div>
       <div class="amount">${fmt(p.amount)}</div>
       <button class="del" data-id="${p.id}" title="Удалить">✕</button>
