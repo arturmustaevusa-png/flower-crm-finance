@@ -1,3 +1,9 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+<title>Flower CRM — партнёрская касса</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Manrope:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
@@ -174,6 +180,16 @@
   .type-legend span{font-size:12px;color:var(--ink-soft);display:flex;align-items:center;gap:6px;}
   .type-legend i{width:12px;height:12px;border-radius:4px;display:inline-block;}
   .rows-head{display:flex;justify-content:space-between;align-items:center;margin:2px 2px 14px;flex-wrap:wrap;gap:10px;}
+  .year-tabs{display:flex;gap:6px;flex-wrap:wrap;margin:2px 2px 14px;}
+  .year-tab{
+    background:var(--card);border:1.5px solid var(--line);color:var(--ink-soft);
+    font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:600;
+    padding:6px 13px;border-radius:20px;cursor:pointer;transition:border-color .15s, color .15s, background .15s;
+  }
+  .year-tab .cnt{opacity:.6;margin-left:4px;}
+  .year-tab:hover{border-color:var(--ink-soft);}
+  .year-tab.active{background:var(--ink);border-color:var(--ink);color:#fff;}
+  .year-tab.active .cnt{opacity:.75;}
   .export-btn{
     background:var(--card);border:1.5px solid var(--line);color:var(--ink);
     font-family:'Manrope',sans-serif;font-weight:700;font-size:12.5px;
@@ -251,13 +267,26 @@
     font-weight:600;font-size:13px;cursor:pointer;
   }
 
+  @media (max-width:900px){
+    .app{padding:24px 16px 50px;}
+    h1{font-size:28px;}
+  }
   @media (max-width:760px){
+    .form-row1{grid-template-columns:1fr;}
     .form-grid{grid-template-columns:1fr 1fr;}
     .stats{grid-template-columns:1fr;}
     .row{grid-template-columns:1fr;gap:6px;text-align:left;}
     .amount{text-align:left;}
+    .app-head{flex-direction:column;}
+  }
+  @media (max-width:420px){
+    h1{font-size:24px;}
+    .balance-card{padding:18px 16px 16px;}
+    .stat .n{font-size:20px;}
   }
 </style>
+</head>
+<body>
 
 <div class="app">
   <div class="app-head">
@@ -347,6 +376,8 @@
     </div>
   </div>
 
+  <div class="year-tabs" id="yearTabs"></div>
+
   <div class="rows-head">
     <div class="type-legend">
       <span><i style="background:var(--leaf)"></i>Ежемесячный</span>
@@ -380,6 +411,37 @@ const DEFAULT_PAYMENTS = [
 let payments = [];
 let ghSha = null;
 let storageMode = 'none'; // 'github' | 'claude' | 'none'
+let selectedYear = 'all';
+
+function getYear(dateStr){
+  return dateStr ? dateStr.slice(0,4) : 'no-date';
+}
+
+function renderYearTabs(){
+  const el = document.getElementById('yearTabs');
+  const counts = {};
+  payments.forEach(p=>{
+    const y = getYear(p.date);
+    counts[y] = (counts[y]||0) + 1;
+  });
+  const years = Object.keys(counts).filter(y=>y!=='no-date').sort();
+  const hasNoDate = counts['no-date'] > 0;
+
+  let tabs = [`<button class="year-tab ${selectedYear==='all'?'active':''}" data-year="all">Все<span class="cnt">${payments.length}</span></button>`];
+  years.forEach(y=>{
+    tabs.push(`<button class="year-tab ${selectedYear===y?'active':''}" data-year="${y}">${y}<span class="cnt">${counts[y]}</span></button>`);
+  });
+  if(hasNoDate){
+    tabs.push(`<button class="year-tab ${selectedYear==='no-date'?'active':''}" data-year="no-date">Без даты<span class="cnt">${counts['no-date']}</span></button>`);
+  }
+  el.innerHTML = tabs.join('');
+  el.querySelectorAll('.year-tab').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      selectedYear = btn.dataset.year;
+      render();
+    });
+  });
+}
 
 function getGh(){
   try{ return JSON.parse(localStorage.getItem('ghSettings') || 'null'); }
@@ -530,12 +592,14 @@ document.getElementById('ghDisconnect').addEventListener('click', ()=>{
 });
 
 function render(){
+  renderYearTabs();
   const rowsEl = document.getElementById('rows');
   rowsEl.innerHTML = '';
-  if(!payments.length){
-    rowsEl.innerHTML = '<div class="empty">Пока пусто — добавьте первый платёж выше.</div>';
+  const visible = payments.filter(p => selectedYear === 'all' || getYear(p.date) === selectedYear);
+  if(!visible.length){
+    rowsEl.innerHTML = '<div class="empty">Нет платежей за этот год.</div>';
   }
-  payments.slice().sort((a,b)=>(b.date||'').localeCompare(a.date||'')).forEach(p=>{
+  visible.slice().sort((a,b)=>(b.date||'').localeCompare(a.date||'')).forEach(p=>{
     const div = document.createElement('div');
     div.className = 'row ' + p.type + (p.status==='void' ? ' void' : '');
     div.dataset.id = p.id;
@@ -717,3 +781,5 @@ document.getElementById('exportBtn').addEventListener('click', ()=>{
 load();
 clearForm();
 </script>
+</body>
+</html>
