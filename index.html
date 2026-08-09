@@ -72,6 +72,7 @@
   }
   .conn-badge:hover{border-color:var(--ink-soft);}
   .conn-badge.on{border-color:var(--leaf-deep);color:var(--leaf-deep);background:var(--leaf-tint);}
+  #trashCount{font-family:'IBM Plex Mono',monospace;font-weight:700;}
   .settings-panel{
     background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);
     padding:18px 20px;margin-bottom:20px;
@@ -202,14 +203,12 @@
   .rows{display:flex;flex-direction:column;gap:8px;}
   .row{
     background:var(--card);border-radius:12px;box-shadow:var(--shadow);
-    padding:13px 16px;display:grid;
-    grid-template-columns:96px 1fr 110px 96px 110px auto;
+    padding:13px 16px;display:grid;position:relative;
+    grid-template-columns:90px 96px 1fr 100px 100px auto;
     align-items:center;gap:12px;border-left:5px solid var(--gray);
     cursor:pointer;transition:box-shadow .15s, transform .15s;
   }
   .row:hover{box-shadow:0 1px 2px rgba(22,36,28,.04), 0 10px 26px -10px rgba(22,36,28,.22);transform:translateY(-1px);}
-  .row.void{opacity:.55;}
-  .row.void .title{text-decoration:line-through;}
   .row.monthly{border-left-color:var(--leaf);}
   .row.yearly{border-left-color:var(--gold);}
   .row.onetime{border-left-color:var(--gray);}
@@ -224,62 +223,60 @@
   .pill.roman{background:var(--roman-tint);color:var(--roman);}
   .pill.none{background:var(--gray-tint);color:var(--gray);}
   .amount{font-family:'Fraunces',serif;font-weight:600;font-size:16px;text-align:right;}
-  .status{font-size:11px;font-weight:700;padding:4px 8px;border-radius:7px;text-align:center;}
+  .status{font-size:11px;font-weight:700;padding:4px 8px;border-radius:7px;text-align:center;white-space:nowrap;}
   .status.paid{background:var(--leaf-tint);color:var(--leaf-deep);}
-  .status.plan{background:var(--gold-tint);color:var(--gold);}
-  .status.later{background:var(--later-tint);color:var(--later);}
-  .status.void{background:var(--void-tint);color:var(--void);}
+  .status.unpaid{background:var(--void-tint);color:var(--void);}
   .del{background:none;border:none;color:var(--line);cursor:pointer;font-size:16px;padding:4px;position:relative;z-index:2;}
   .del:hover{color:var(--artur);}
 
   .empty{text-align:center;padding:30px;color:var(--ink-soft);font-size:13.5px;}
   .footnote{margin-top:18px;font-size:11.5px;color:var(--ink-soft);text-align:center;}
 
-  /* edit modal */
-  .modal-overlay{
-    position:fixed;inset:0;background:rgba(22,36,28,.35);
-    display:flex;align-items:center;justify-content:center;padding:20px;z-index:50;
-  }
-  .modal-overlay.hidden{display:none;}
-  .modal{
+  .header-actions{display:flex;gap:8px;flex-shrink:0;}
+
+  .trash-panel{
     background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);
-    padding:24px 26px;max-width:420px;width:100%;
+    padding:18px 20px;margin-bottom:20px;
   }
-  .modal h3{font-family:'Fraunces',serif;font-weight:600;font-size:18px;margin:0 0 16px;}
-  .modal .field{margin-bottom:12px;}
-  .status-choices{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:4px;}
-  .status-choice{
-    border:1.5px solid var(--line);border-radius:9px;padding:9px 6px;
-    font-family:'Manrope',sans-serif;font-size:12.5px;font-weight:700;
-    cursor:pointer;text-align:center;background:#fff;color:var(--ink-soft);
-    transition:border-color .15s, background .15s, color .15s;
+  .trash-panel.hidden{display:none;}
+  .trash-list{display:flex;flex-direction:column;gap:6px;margin:10px 0 16px;max-height:320px;overflow-y:auto;}
+  .trash-row{
+    background:var(--gray-tint);border-radius:10px;padding:10px 12px;
+    display:grid;grid-template-columns:80px 1fr 90px 90px;gap:10px;align-items:center;font-size:12.5px;
   }
-  .status-choice.active.paid{border-color:var(--leaf-deep);background:var(--leaf-tint);color:var(--leaf-deep);}
-  .status-choice.active.plan{border-color:var(--gold);background:var(--gold-tint);color:var(--gold);}
-  .status-choice.active.later{border-color:var(--later);background:var(--later-tint);color:var(--later);}
-  .status-choice.active.void{border-color:var(--void);background:var(--void-tint);color:var(--void);}
-  .modal-actions{display:flex;justify-content:space-between;align-items:center;margin-top:18px;}
-  .modal-save{
-    background:var(--ink);color:#fff;border:none;border-radius:9px;
-    padding:10px 18px;font-family:'Manrope',sans-serif;font-weight:700;font-size:13px;cursor:pointer;
+  .trash-row .t-title{font-weight:600;}
+  .trash-row .t-title small{display:block;font-weight:400;color:var(--ink-soft);font-size:11px;}
+  .trash-row .t-date{font-family:'IBM Plex Mono',monospace;color:var(--ink-soft);font-size:11.5px;}
+  .trash-row .t-when{font-size:10.5px;color:var(--ink-soft);grid-column:1/-1;}
+  .trash-clear{
+    border-top:1px solid var(--line);padding-top:14px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;
   }
-  .modal-save:hover{background:var(--leaf-deep);}
-  .modal-cancel{
-    background:none;border:none;color:var(--ink-soft);font-family:'Manrope',sans-serif;
-    font-weight:600;font-size:13px;cursor:pointer;
+  .trash-clear input{
+    font-family:'Manrope',sans-serif;font-size:13px;border:1.5px solid var(--line);border-radius:9px;
+    padding:8px 10px;width:140px;
   }
 
   @media (max-width:900px){
     .app{padding:24px 16px 50px;}
     h1{font-size:28px;}
-  }
-  @media (max-width:760px){
     .form-row1{grid-template-columns:1fr;}
     .form-grid{grid-template-columns:1fr 1fr;}
     .stats{grid-template-columns:1fr;}
-    .row{grid-template-columns:1fr;gap:6px;text-align:left;}
-    .amount{text-align:left;}
-    .app-head{flex-direction:column;}
+    .app-head{flex-direction:column;align-items:flex-start;}
+
+    .row{
+      grid-template-columns:1fr;gap:5px;text-align:left;
+      padding:14px 44px 14px 16px;
+    }
+    .row .date{order:1;}
+    .row .status{order:2;align-self:flex-start;width:fit-content;
+      background:transparent!important;border:1.5px solid currentColor;padding:3px 10px;}
+    .row .title{order:3;}
+    .row .pill{order:4;align-self:flex-start;width:fit-content;
+      background:none!important;padding:0;font-weight:600;}
+    .row .pill::before{content:"Оплатил: ";font-weight:400;color:var(--ink-soft);}
+    .row .amount{order:5;text-align:left;}
+    .row .del{order:6;position:absolute;top:12px;right:12px;font-size:18px;}
   }
   @media (max-width:420px){
     h1{font-size:24px;}
@@ -296,11 +293,23 @@
       <div class="eyebrow">Flower CRM · партнёрская касса</div>
       <h1>Артур ↔ Роман, 50/50</h1>
     </div>
-    <div class="conn-block">
+    <div class="header-actions">
+      <button class="conn-badge" id="trashBadge" title="Журнал удалённых записей">🗑 История<span id="trashCount"></span></button>
       <button class="conn-badge" id="connBadge" title="Настройки подключения">⚙ <span id="connLabel">не подключено</span></button>
     </div>
   </div>
   <p class="sub">Каждый платёж — своей строкой. Считается автоматически: кто сколько внёс и кто кому должен довнести.</p>
+
+  <div class="trash-panel hidden" id="trashPanel">
+    <p class="settings-title">Журнал удалённых записей</p>
+    <p class="settings-hint">Записи попадают сюда после удаления и хранятся здесь без возможности убрать по одной. Очистить весь журнал можно только паролем.</p>
+    <div class="trash-list" id="trashList"></div>
+    <div class="trash-clear">
+      <input id="trashPass" type="password" placeholder="Пароль для очистки">
+      <button class="settings-save" id="trashClearBtn">Очистить журнал</button>
+      <span class="settings-status" id="trashClearStatus"></span>
+    </div>
+  </div>
 
   <div class="settings-panel hidden" id="settingsPanel">
     <p class="settings-title">Подключение к GitHub</p>
@@ -369,8 +378,6 @@
         <select id="fStatus">
           <option value="paid">Оплачено</option>
           <option value="plan">План</option>
-          <option value="later">На потом</option>
-          <option value="void">Неактуально</option>
         </select>
       </div>
       <button class="cancel-btn hidden" id="cancelBtn">Отмена</button>
@@ -396,9 +403,15 @@
 <script>
 const TYPE_LABEL = {monthly:'ежемесячно', yearly:'ежегодно', onetime:'разово'};
 const WHO_LABEL = {artur:'Артур', roman:'Роман', '':'—'};
-const STATUS_LABEL = {paid:'Оплачено', plan:'План', later:'На потом', void:'Неактуально'};
+const STATUS_LABEL = {paid:'Оплачено', plan:'План'};
 const fmt = n => new Intl.NumberFormat('ru-RU').format(Math.round(n)) + ' ₽';
 let editingId = null;
+
+function statusInfo(p){
+  if(p.status === 'paid') return {cls:'paid', label:'Оплачено'};
+  if(p.date && p.date < todayStr()) return {cls:'unpaid', label:'Оплата просрочена'};
+  return {cls:'unpaid', label:'План'};
+}
 
 const DEFAULT_PAYMENTS = [
   {id:'p1', title:'Подписка Claude', note:'период 08.08–08.09.26', date:'2026-08-08', type:'monthly', amount:9500, who:'artur', status:'paid'},
@@ -411,6 +424,7 @@ const DEFAULT_PAYMENTS = [
 ];
 
 let payments = [];
+let trash = [];
 let ghSha = null;
 let storageMode = 'none'; // 'github' | 'claude' | 'none'
 let selectedStatus = 'all';
@@ -486,6 +500,12 @@ function setConnLabel(mode, extra){
   else { badge.classList.remove('on'); label.textContent = 'не подключено'; }
 }
 
+function normalizeStore(raw){
+  if(!raw) return { payments: DEFAULT_PAYMENTS, trash: [] };
+  if(Array.isArray(raw)) return { payments: raw, trash: [] };
+  return { payments: raw.payments || DEFAULT_PAYMENTS, trash: raw.trash || [] };
+}
+
 async function load(){
   const ghCfg = getGh();
   if(ghCfg && ghCfg.token && ghCfg.owner && ghCfg.repo){
@@ -493,10 +513,13 @@ async function load(){
       const {json, sha} = await ghFetchFile(ghCfg);
       ghSha = sha;
       if(json){
-        payments = json;
+        const norm = normalizeStore(json);
+        payments = norm.payments;
+        trash = norm.trash;
       } else {
         payments = DEFAULT_PAYMENTS;
-        ghSha = await ghPutFile(ghCfg, payments, null, 'init payments.json');
+        trash = [];
+        ghSha = await ghPutFile(ghCfg, {payments, trash}, null, 'init payments.json');
       }
       setConnLabel('github', `${ghCfg.owner}/${ghCfg.repo}`);
       render();
@@ -511,10 +534,13 @@ async function load(){
   }
   try{
     const res = await window.storage.get('payments', true);
-    payments = res && res.value ? JSON.parse(res.value) : DEFAULT_PAYMENTS;
+    const norm = normalizeStore(res && res.value ? JSON.parse(res.value) : null);
+    payments = norm.payments;
+    trash = norm.trash;
     setConnLabel('claude');
   }catch(e){
     payments = DEFAULT_PAYMENTS;
+    trash = [];
     setConnLabel('none');
   }
   if(!payments.length) payments = DEFAULT_PAYMENTS;
@@ -526,7 +552,7 @@ async function save(){
     const cfg = getGh();
     if(cfg){
       try{
-        ghSha = await ghPutFile(cfg, payments, ghSha, 'update payments');
+        ghSha = await ghPutFile(cfg, {payments, trash}, ghSha, 'update payments');
         return;
       }catch(e){
         console.error('github save error', e);
@@ -535,8 +561,44 @@ async function save(){
       }
     }
   }
-  try{ await window.storage.set('payments', JSON.stringify(payments), true); }
+  try{ await window.storage.set('payments', JSON.stringify({payments, trash}), true); }
   catch(e){ console.error('storage error', e); }
+}
+
+document.getElementById('trashBadge').addEventListener('click', ()=>{
+  document.getElementById('trashPanel').classList.toggle('hidden');
+  renderTrash();
+});
+document.getElementById('trashClearBtn').addEventListener('click', ()=>{
+  const pass = document.getElementById('trashPass').value;
+  const statusEl = document.getElementById('trashClearStatus');
+  if(pass !== '12345'){
+    statusEl.textContent = 'Неверный пароль';
+    statusEl.className = 'settings-status err';
+    return;
+  }
+  trash = [];
+  document.getElementById('trashPass').value = '';
+  statusEl.textContent = 'Журнал очищен ✓';
+  statusEl.className = 'settings-status ok';
+  save();
+  renderTrash();
+});
+function renderTrash(){
+  document.getElementById('trashCount').textContent = trash.length ? ` ${trash.length}` : '';
+  const el = document.getElementById('trashList');
+  if(!trash.length){
+    el.innerHTML = '<div class="empty">Журнал пуст.</div>';
+    return;
+  }
+  el.innerHTML = trash.map(p => `
+    <div class="trash-row">
+      <div class="t-date">${p.date ? p.date.split('-').reverse().join('.') : '—'}</div>
+      <div class="t-title">${p.title}<small>${WHO_LABEL[p.who]} · ${STATUS_LABEL[p.status]||p.status}</small></div>
+      <div>${fmt(p.amount)}</div>
+      <div class="t-when">удалено ${new Date(p.deletedAt).toLocaleString('ru-RU')}</div>
+    </div>
+  `).join('');
 }
 
 document.getElementById('connBadge').addEventListener('click', ()=>{
@@ -592,14 +654,15 @@ function render(){
   }
   visible.slice().sort((a,b)=>(b.date||'').localeCompare(a.date||'')).forEach(p=>{
     const div = document.createElement('div');
-    div.className = 'row ' + p.type + (p.status==='void' ? ' void' : '');
+    const info = statusInfo(p);
+    div.className = 'row ' + p.type;
     div.dataset.id = p.id;
     div.innerHTML = `
       <div class="date">${p.date ? p.date.split('-').reverse().join('.') : '—'}</div>
+      <div class="status ${info.cls}">${info.label}</div>
       <div class="title">${p.title}${p.note ? `<small>${p.note} · ${TYPE_LABEL[p.type]}</small>` : `<small>${TYPE_LABEL[p.type]}</small>`}</div>
       <div class="pill ${p.who||'none'}">${WHO_LABEL[p.who]}</div>
       <div class="amount">${fmt(p.amount)}</div>
-      <div class="status ${p.status}">${STATUS_LABEL[p.status]}</div>
       <button class="del" data-id="${p.id}" title="Удалить">✕</button>
     `;
     div.classList.toggle('editing', p.id === editingId);
@@ -612,9 +675,14 @@ function render(){
   rowsEl.querySelectorAll('.del').forEach(btn=>{
     btn.addEventListener('click', (e)=>{
       e.stopPropagation();
-      payments = payments.filter(p=>p.id !== btn.dataset.id);
+      const p = payments.find(x=>x.id === btn.dataset.id);
+      if(!p) return;
+      const ok = confirm(`Вы точно хотите удалить запись «${p.title}» (${fmt(p.amount)})?\n\nЗапись переместится в Журнал удалённых записей — оттуда её нельзя будет убрать без пароля.`);
+      if(!ok) return;
+      payments = payments.filter(x=>x.id !== p.id);
+      trash.unshift({...p, deletedAt: new Date().toISOString()});
       save();
-      if(editingId === btn.dataset.id) stopEdit(); else render();
+      if(editingId === p.id) stopEdit(); else render();
     });
   });
   computeStats();
@@ -780,7 +848,7 @@ document.getElementById('exportBtn').addEventListener('click', ()=>{
       TYPE_LABEL[p.type],
       p.amount,
       WHO_LABEL[p.who],
-      STATUS_LABEL[p.status],
+      STATUS_LABEL[p.status] || p.status,
     ].map(escapeCsv).join(','));
   });
   const csv = '\uFEFF' + lines.join('\n');
