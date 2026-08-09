@@ -1,0 +1,75 @@
+{
+  "payments": [
+    {
+      "id": "p1",
+      "title": "Подписка Claude",
+      "note": "период 08.08–08.09.26",
+      "date": "2026-08-08",
+      "type": "monthly",
+      "amount": 9500,
+      "who": "artur",
+      "status": "paid"
+    },
+    {
+      "id": "p2",
+      "title": "Пополнение Claude",
+      "note": "не хватает токенов и лимитов",
+      "date": "",
+      "type": "onetime",
+      "amount": 9500,
+      "who": "artur",
+      "status": "plan"
+    },
+    {
+      "id": "p3",
+      "title": "Аренда сервера — август",
+      "note": "1 бэкап, оплата 27 числа",
+      "date": "2026-08-01",
+      "type": "monthly",
+      "amount": 1600,
+      "who": "artur",
+      "status": "paid"
+    },
+    {
+      "id": "p4",
+      "title": "Домен",
+      "note": "1 год, до 08.2027",
+      "date": "2026-08-08",
+      "type": "yearly",
+      "amount": 390,
+      "who": "artur",
+      "status": "paid"
+    },
+    {
+      "id": "p5",
+      "title": "Аренда сервера — сентябрь",
+      "note": "оплата 27 числа",
+      "date": "2026-09-27",
+      "type": "monthly",
+      "amount": 1600,
+      "who": "",
+      "status": "plan"
+    },
+    {
+      "id": "p6",
+      "title": "Доп. бэкап №2",
+      "note": "в будущем, +к серверу",
+      "date": "",
+      "type": "monthly",
+      "amount": 300,
+      "who": "",
+      "status": "plan"
+    },
+    {
+      "id": "p7",
+      "title": "Доп. бэкап №3",
+      "note": "в будущем, +к серверу",
+      "date": "",
+      "type": "monthly",
+      "amount": 300,
+      "who": "",
+      "status": "plan"
+    }
+  ],
+  "trash": []
+}
