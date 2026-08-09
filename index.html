@@ -377,6 +377,7 @@
   </div>
 
   <div class="year-tabs" id="yearTabs"></div>
+  <div class="year-tabs" id="statusTabs"></div>
 
   <div class="rows-head">
     <div class="type-legend">
@@ -412,6 +413,7 @@ let payments = [];
 let ghSha = null;
 let storageMode = 'none'; // 'github' | 'claude' | 'none'
 let selectedYear = 'all';
+let selectedStatus = 'all';
 
 function getYear(dateStr){
   return dateStr ? dateStr.slice(0,4) : 'no-date';
@@ -438,6 +440,26 @@ function renderYearTabs(){
   el.querySelectorAll('.year-tab').forEach(btn=>{
     btn.addEventListener('click', ()=>{
       selectedYear = btn.dataset.year;
+      render();
+    });
+  });
+}
+
+function renderStatusTabs(){
+  const el = document.getElementById('statusTabs');
+  const order = ['paid','plan','later','void'];
+  const counts = {};
+  payments.forEach(p=>{ counts[p.status] = (counts[p.status]||0) + 1; });
+
+  let tabs = [`<button class="year-tab ${selectedStatus==='all'?'active':''}" data-status="all">Статус: все<span class="cnt">${payments.length}</span></button>`];
+  order.forEach(s=>{
+    if(!counts[s]) return;
+    tabs.push(`<button class="year-tab ${selectedStatus===s?'active':''}" data-status="${s}">${STATUS_LABEL[s]}<span class="cnt">${counts[s]}</span></button>`);
+  });
+  el.innerHTML = tabs.join('');
+  el.querySelectorAll('.year-tab').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      selectedStatus = btn.dataset.status;
       render();
     });
   });
@@ -593,11 +615,15 @@ document.getElementById('ghDisconnect').addEventListener('click', ()=>{
 
 function render(){
   renderYearTabs();
+  renderStatusTabs();
   const rowsEl = document.getElementById('rows');
   rowsEl.innerHTML = '';
-  const visible = payments.filter(p => selectedYear === 'all' || getYear(p.date) === selectedYear);
+  const visible = payments.filter(p =>
+    (selectedYear === 'all' || getYear(p.date) === selectedYear) &&
+    (selectedStatus === 'all' || p.status === selectedStatus)
+  );
   if(!visible.length){
-    rowsEl.innerHTML = '<div class="empty">Нет платежей за этот год.</div>';
+    rowsEl.innerHTML = '<div class="empty">Нет платежей под этот фильтр.</div>';
   }
   visible.slice().sort((a,b)=>(b.date||'').localeCompare(a.date||'')).forEach(p=>{
     const div = document.createElement('div');
