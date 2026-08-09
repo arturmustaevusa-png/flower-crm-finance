@@ -161,6 +161,8 @@
     background:#fff;color:var(--ink);outline:none;
   }
   .field input:focus,.field select:focus{border-color:var(--leaf);}
+  .field input.err,.field select.err{border-color:var(--void);background:var(--void-tint);}
+  .form-hint.err{color:var(--void);font-weight:600;}
   .add-btn{
     background:var(--ink);color:#fff;border:none;border-radius:9px;
     padding:10px 16px;font-family:'Manrope',sans-serif;font-weight:700;font-size:13px;
@@ -376,7 +378,6 @@
     </div>
   </div>
 
-  <div class="year-tabs" id="yearTabs"></div>
   <div class="year-tabs" id="statusTabs"></div>
 
   <div class="rows-head">
@@ -412,49 +413,17 @@ const DEFAULT_PAYMENTS = [
 let payments = [];
 let ghSha = null;
 let storageMode = 'none'; // 'github' | 'claude' | 'none'
-let selectedYear = 'all';
 let selectedStatus = 'all';
-
-function getYear(dateStr){
-  return dateStr ? dateStr.slice(0,4) : 'no-date';
-}
-
-function renderYearTabs(){
-  const el = document.getElementById('yearTabs');
-  const counts = {};
-  payments.forEach(p=>{
-    const y = getYear(p.date);
-    counts[y] = (counts[y]||0) + 1;
-  });
-  const years = Object.keys(counts).filter(y=>y!=='no-date').sort();
-  const hasNoDate = counts['no-date'] > 0;
-
-  let tabs = [`<button class="year-tab ${selectedYear==='all'?'active':''}" data-year="all">Все<span class="cnt">${payments.length}</span></button>`];
-  years.forEach(y=>{
-    tabs.push(`<button class="year-tab ${selectedYear===y?'active':''}" data-year="${y}">${y}<span class="cnt">${counts[y]}</span></button>`);
-  });
-  if(hasNoDate){
-    tabs.push(`<button class="year-tab ${selectedYear==='no-date'?'active':''}" data-year="no-date">Без даты<span class="cnt">${counts['no-date']}</span></button>`);
-  }
-  el.innerHTML = tabs.join('');
-  el.querySelectorAll('.year-tab').forEach(btn=>{
-    btn.addEventListener('click', ()=>{
-      selectedYear = btn.dataset.year;
-      render();
-    });
-  });
-}
 
 function renderStatusTabs(){
   const el = document.getElementById('statusTabs');
-  const order = ['paid','plan','later','void'];
+  const order = ['paid','plan'];
   const counts = {};
   payments.forEach(p=>{ counts[p.status] = (counts[p.status]||0) + 1; });
 
-  let tabs = [`<button class="year-tab ${selectedStatus==='all'?'active':''}" data-status="all">Статус: все<span class="cnt">${payments.length}</span></button>`];
+  let tabs = [`<button class="year-tab ${selectedStatus==='all'?'active':''}" data-status="all">Все<span class="cnt">${payments.length}</span></button>`];
   order.forEach(s=>{
-    if(!counts[s]) return;
-    tabs.push(`<button class="year-tab ${selectedStatus===s?'active':''}" data-status="${s}">${STATUS_LABEL[s]}<span class="cnt">${counts[s]}</span></button>`);
+    tabs.push(`<button class="year-tab ${selectedStatus===s?'active':''}" data-status="${s}">${STATUS_LABEL[s]}<span class="cnt">${counts[s]||0}</span></button>`);
   });
   el.innerHTML = tabs.join('');
   el.querySelectorAll('.year-tab').forEach(btn=>{
@@ -614,14 +583,10 @@ document.getElementById('ghDisconnect').addEventListener('click', ()=>{
 });
 
 function render(){
-  renderYearTabs();
   renderStatusTabs();
   const rowsEl = document.getElementById('rows');
   rowsEl.innerHTML = '';
-  const visible = payments.filter(p =>
-    (selectedYear === 'all' || getYear(p.date) === selectedYear) &&
-    (selectedStatus === 'all' || p.status === selectedStatus)
-  );
+  const visible = payments.filter(p => selectedStatus === 'all' || p.status === selectedStatus);
   if(!visible.length){
     rowsEl.innerHTML = '<div class="empty">Нет платежей под этот фильтр.</div>';
   }
@@ -741,24 +706,45 @@ function stopEdit(){
   addBtn.textContent = '+ Добавить';
   cancelBtn.classList.add('hidden');
   editTag.classList.add('hidden');
+  formHint.classList.remove('err');
   formHint.textContent = 'Заполни поля и нажми «Добавить» — или кликни по строке ниже, чтобы её изменить.';
+  [fTitle, fDate, fAmount, fWho, fStatus].forEach(el => el.classList.remove('err'));
   clearForm();
   render();
 }
 
 addBtn.addEventListener('click', ()=>{
-  const title = fTitle.value.trim();
-  const amount = Number(fAmount.value);
-  if(!title || !amount){
-    fTitle.focus();
+  const fields = [
+    { el: fTitle, valid: () => fTitle.value.trim() !== '' },
+    { el: fDate, valid: () => fDate.value !== '' },
+    { el: fAmount, valid: () => Number(fAmount.value) > 0 },
+    { el: fWho, valid: () => fWho.value !== '' },
+    { el: fStatus, valid: () => fStatus.value !== '' },
+  ];
+  [fTitle, fDate, fAmount, fWho, fStatus].forEach(el => el.classList.remove('err'));
+
+  let firstInvalid = null;
+  fields.forEach(f => {
+    if(!f.valid()){
+      f.el.classList.add('err');
+      if(!firstInvalid) firstInvalid = f.el;
+    }
+  });
+
+  if(firstInvalid){
+    formHint.textContent = 'Заполни все поля: статья, дата, сумма, кто платил, статус — все обязательны.';
+    formHint.classList.add('err');
+    firstInvalid.focus();
     return;
   }
+  formHint.classList.remove('err');
+
   const data = {
-    title,
+    title: fTitle.value.trim(),
     note: fNote.value.trim(),
     date: fDate.value,
     type: fType.value,
-    amount,
+    amount: Number(fAmount.value),
     who: fWho.value,
     status: fStatus.value,
   };
@@ -773,6 +759,11 @@ addBtn.addEventListener('click', ()=>{
 });
 
 cancelBtn.addEventListener('click', stopEdit);
+
+[fTitle, fDate, fAmount, fWho, fStatus].forEach(el => {
+  el.addEventListener('input', () => el.classList.remove('err'));
+  el.addEventListener('change', () => el.classList.remove('err'));
+});
 
 document.getElementById('exportBtn').addEventListener('click', ()=>{
   const headers = ['Дата','Статья','Комментарий','Тип','Сумма','Кто оплатил','Статус'];
