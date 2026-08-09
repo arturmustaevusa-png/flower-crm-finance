@@ -69,6 +69,16 @@
       "amount": 300,
       "who": "",
       "status": "plan"
+    },
+    {
+      "id": "p1786280747474",
+      "title": "доп на баланс сервера",
+      "note": "",
+      "date": "2026-08-09",
+      "type": "onetime",
+      "amount": 1000,
+      "who": "roman",
+      "status": "paid"
     }
   ],
   "trash": []
