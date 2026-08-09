@@ -12,13 +12,13 @@
     },
     {
       "id": "p2",
-      "title": "Пополнение Claude",
+      "title": "Пополнение Claude х20",
       "note": "не хватает токенов и лимитов",
-      "date": "",
+      "date": "2026-08-09",
       "type": "onetime",
       "amount": 9500,
-      "who": "artur",
-      "status": "plan"
+      "who": "roman",
+      "status": "paid"
     },
     {
       "id": "p3",
