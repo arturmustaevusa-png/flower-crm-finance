@@ -135,6 +135,8 @@
   .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:22px;}
   .stat{background:var(--card);border-radius:14px;box-shadow:var(--shadow);padding:16px 16px 14px;}
   .stat .n{font-family:'Fraunces',serif;font-size:24px;font-weight:600;}
+  .stat .n.paid-color{color:var(--leaf-deep);}
+  .stat .n.plan-color{color:var(--void);}
   .stat .l{font-size:12px;color:var(--ink-soft);margin-top:2px;}
 
   .form-card{
@@ -235,6 +237,11 @@
   .footnote{margin-top:18px;font-size:11.5px;color:var(--ink-soft);text-align:center;}
 
   .header-actions{display:flex;gap:8px;flex-shrink:0;}
+  .load-error{
+    background:var(--void-tint);color:var(--void);border-radius:12px;
+    padding:12px 16px;font-size:13px;font-weight:600;margin-bottom:16px;line-height:1.4;
+  }
+  .load-error.hidden{display:none;}
 
   .trash-panel{
     background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);
@@ -302,6 +309,8 @@
   </div>
   <p class="sub">Каждый платёж — своей строкой. Считается автоматически: кто сколько внёс и кто кому должен довнести.</p>
 
+  <div class="load-error hidden" id="loadError"></div>
+
   <div class="trash-panel hidden" id="trashPanel">
     <p class="settings-title">Журнал удалённых записей</p>
     <p class="settings-hint">Записи попадают сюда после удаления и хранятся здесь без возможности убрать по одной. Очистить весь журнал можно только паролем.</p>
@@ -330,9 +339,9 @@
   </div>
 
   <div class="stats">
-    <div class="stat"><div class="n" id="totalPaid">0 ₽</div><div class="l">оплачено фактически</div></div>
-    <div class="stat"><div class="n" id="totalPlan">0 ₽</div><div class="l">запланировано / к оплате</div></div>
-    <div class="stat"><div class="n" id="totalCount">0</div><div class="l">платежей в таблице</div></div>
+    <div class="stat"><div class="n paid-color" id="totalPaid">0 ₽</div><div class="l">оплачено фактически</div></div>
+    <div class="stat"><div class="n plan-color" id="totalPlan">0 ₽</div><div class="l">запланировано / к оплате</div></div>
+    <div class="stat"><div class="n" id="totalCount">0</div><div class="l">платежей к оплате</div></div>
   </div>
 
   <div class="form-card">
@@ -453,7 +462,7 @@ async function ghFetchFile(cfg){
   const json = JSON.parse(b64DecodeUnicode(data.content));
   return {json, sha:data.sha};
 }
-async function ghPutFile(cfg, json, sha, message){
+async function ghPutFile(cfg, json, sha, message, retried){
   const body = {
     message: message || 'update payments.json',
     content: b64EncodeUnicode(JSON.stringify(json, null, 2)),
@@ -465,6 +474,11 @@ async function ghPutFile(cfg, json, sha, message){
     headers:{ 'Authorization':`Bearer ${cfg.token}`, 'Accept':'application/vnd.github+json' },
     body: JSON.stringify(body),
   });
+  if(res.status === 409 && !retried){
+    // sha conflict — someone else saved in the meantime, refetch and retry once
+    const fresh = await ghFetchFile(cfg);
+    return ghPutFile(cfg, json, fresh.sha, message, true);
+  }
   if(!res.ok){
     const err = await res.json().catch(()=>({}));
     throw new Error(err.message || `GitHub PUT ${res.status}`);
@@ -478,6 +492,16 @@ function normalizeStore(raw){
   if(Array.isArray(raw)) return { payments: raw, trash: [] };
   return { payments: raw.payments || DEFAULT_PAYMENTS, trash: raw.trash || [] };
 }
+
+function showLoadError(msg){
+  const el = document.getElementById('loadError');
+  if(!el) return;
+  if(!msg){ el.classList.add('hidden'); el.textContent=''; return; }
+  el.textContent = '⚠ ' + msg;
+  el.classList.remove('hidden');
+}
+
+const hasWindowStorage = () => typeof window !== 'undefined' && !!window.storage;
 
 async function load(){
   try{
@@ -493,18 +517,26 @@ async function load(){
       ghSha = await ghPutFile(GH_CONFIG, {payments, trash}, null, 'init payments.json');
     }
     storageMode = 'github';
+    showLoadError(null);
     render();
     return;
   }catch(e){
     console.error('GitHub load error', e);
+    showLoadError('Не удалось загрузить данные из GitHub: ' + e.message + '. Показаны последние известные данные — они могут быть не самыми свежими.');
   }
-  try{
-    const res = await window.storage.get('payments', true);
-    const norm = normalizeStore(res && res.value ? JSON.parse(res.value) : null);
-    payments = norm.payments;
-    trash = norm.trash;
-    storageMode = 'claude';
-  }catch(e){
+  if(hasWindowStorage()){
+    try{
+      const res = await window.storage.get('payments', true);
+      const norm = normalizeStore(res && res.value ? JSON.parse(res.value) : null);
+      payments = norm.payments;
+      trash = norm.trash;
+      storageMode = 'claude';
+    }catch(e){
+      payments = DEFAULT_PAYMENTS;
+      trash = [];
+      storageMode = 'none';
+    }
+  } else {
     payments = DEFAULT_PAYMENTS;
     trash = [];
     storageMode = 'none';
@@ -517,15 +549,21 @@ async function save(){
   if(storageMode === 'github'){
     try{
       ghSha = await ghPutFile(GH_CONFIG, {payments, trash}, ghSha, 'update payments');
+      showLoadError(null);
       return;
     }catch(e){
       console.error('github save error', e);
-      alert('Не удалось сохранить в GitHub: ' + e.message);
+      showLoadError('Не удалось сохранить в GitHub: ' + e.message + '. Изменение видно только у тебя в браузере и пропадёт при обновлении страницы, пока связь не восстановится.');
+      if(hasWindowStorage()){
+        try{ await window.storage.set('payments', JSON.stringify({payments, trash}), true); }catch(e2){}
+      }
       return;
     }
   }
-  try{ await window.storage.set('payments', JSON.stringify({payments, trash}), true); }
-  catch(e){ console.error('storage error', e); }
+  if(hasWindowStorage()){
+    try{ await window.storage.set('payments', JSON.stringify({payments, trash}), true); }
+    catch(e){ console.error('storage error', e); }
+  }
 }
 
 document.getElementById('trashBadge').addEventListener('click', ()=>{
@@ -621,7 +659,7 @@ function computeStats(){
 
   document.getElementById('totalPaid').textContent = fmt(totalPaid);
   document.getElementById('totalPlan').textContent = fmt(totalPlan);
-  document.getElementById('totalCount').textContent = payments.length;
+  document.getElementById('totalCount').textContent = plan.length;
   document.getElementById('arturSum').textContent = fmt(arturPaid);
   document.getElementById('romanSum').textContent = fmt(romanPaid);
 
