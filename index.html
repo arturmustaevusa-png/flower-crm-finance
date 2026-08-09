@@ -1,0 +1,719 @@
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Manrope:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#FBFBF7;
+    --ink:#16241C;
+    --ink-soft:#5B6B5F;
+    --leaf:#7FBF3F;
+    --leaf-deep:#5C9A2A;
+    --leaf-tint:#EEF7E3;
+    --artur:#E0703A;
+    --artur-tint:#FCEBE0;
+    --roman:#3C7FC2;
+    --roman-tint:#E6F0FB;
+    --line:#E4E4DA;
+    --card:#FFFFFF;
+    --gold-tint:#FBF3DC;
+    --gold:#C9942F;
+    --gray-tint:#F1F1EC;
+    --gray:#8A8A7E;
+    --later-tint:#EDEAF7;
+    --later:#6C5CC2;
+    --void-tint:#F7E6E4;
+    --void:#B14B3D;
+    --radius:18px;
+    --shadow:0 1px 2px rgba(22,36,28,.04), 0 8px 24px -12px rgba(22,36,28,.12);
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;}
+  .app{
+    font-family:'Manrope',sans-serif;
+    background:var(--paper);
+    color:var(--ink);
+    padding:32px 20px 60px;
+    max-width:920px;
+    margin:0 auto;
+  }
+  .eyebrow{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:12px;
+    letter-spacing:.14em;
+    text-transform:uppercase;
+    color:var(--leaf-deep);
+    font-weight:600;
+    display:flex;
+    align-items:center;
+    gap:8px;
+  }
+  .eyebrow::before{content:"✿";font-size:13px;}
+  h1{
+    font-family:'Fraunces',serif;
+    font-weight:600;
+    font-size:34px;
+    line-height:1.08;
+    margin:6px 0 4px;
+    letter-spacing:-.01em;
+  }
+  .sub{color:var(--ink-soft);font-size:14.5px;margin:0 0 20px;}
+  .app-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;}
+  .conn-block{flex-shrink:0;}
+  .conn-badge{
+    font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:600;
+    background:var(--card);border:1.5px solid var(--line);border-radius:20px;
+    padding:6px 12px;cursor:pointer;color:var(--ink-soft);transition:border-color .15s;
+    margin-top:4px;
+  }
+  .conn-badge:hover{border-color:var(--ink-soft);}
+  .conn-badge.on{border-color:var(--leaf-deep);color:var(--leaf-deep);background:var(--leaf-tint);}
+  .settings-panel{
+    background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);
+    padding:18px 20px;margin-bottom:20px;
+  }
+  .settings-panel.hidden{display:none;}
+  .settings-title{font-family:'Fraunces',serif;font-weight:600;font-size:15px;margin:0 0 4px;}
+  .settings-hint{font-size:12px;color:var(--ink-soft);margin:0 0 14px;}
+  .settings-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  .settings-grid .field:first-child{grid-column:1 / -1;}
+  .settings-actions{display:flex;align-items:center;gap:12px;margin-top:14px;flex-wrap:wrap;}
+  .settings-save{
+    background:var(--ink);color:#fff;border:none;border-radius:9px;padding:9px 16px;
+    font-family:'Manrope',sans-serif;font-weight:700;font-size:12.5px;cursor:pointer;
+  }
+  .settings-save:hover{background:var(--leaf-deep);}
+  .settings-disconnect{
+    background:none;border:1.5px solid var(--line);color:var(--ink-soft);border-radius:9px;
+    padding:8px 14px;font-family:'Manrope',sans-serif;font-weight:700;font-size:12.5px;cursor:pointer;
+  }
+  .settings-disconnect:hover{border-color:var(--void);color:var(--void);}
+  .settings-status{font-size:12px;color:var(--ink-soft);}
+  .settings-status.err{color:var(--void);}
+  .settings-status.ok{color:var(--leaf-deep);}
+
+  /* balance scale — signature element */
+  .balance-card{
+    background:var(--card);
+    border-radius:var(--radius);
+    box-shadow:var(--shadow);
+    padding:24px 26px 22px;
+    margin-bottom:18px;
+  }
+  .balance-top{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:14px;flex-wrap:wrap;gap:6px;}
+  .balance-top .label{font-family:'IBM Plex Mono',monospace;font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-soft);}
+  .balance-verdict{font-family:'Fraunces',serif;font-size:17px;font-weight:600;}
+  .scale-track{
+    height:34px;border-radius:10px;overflow:hidden;display:flex;
+    background:var(--gray-tint);position:relative;
+  }
+  .scale-artur,.scale-roman{
+    display:flex;align-items:center;height:100%;
+    font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:600;color:#fff;
+    transition:width .5s cubic-bezier(.4,0,.2,1);
+    white-space:nowrap;overflow:hidden;
+  }
+  .scale-artur{background:var(--artur);justify-content:flex-start;padding-left:12px;}
+  .scale-roman{background:var(--roman);justify-content:flex-end;padding-right:12px;}
+  .scale-mid{
+    position:absolute;top:-4px;bottom:-4px;left:50%;width:2px;background:var(--ink);opacity:.55;
+  }
+  .scale-mid::after{
+    content:"50 / 50";position:absolute;top:-18px;left:50%;transform:translateX(-50%);
+    font-family:'IBM Plex Mono',monospace;font-size:9.5px;color:var(--ink-soft);white-space:nowrap;
+  }
+  .scale-legend{display:flex;justify-content:space-between;margin-top:10px;font-size:13px;}
+  .who{display:flex;align-items:center;gap:7px;}
+  .dot{width:9px;height:9px;border-radius:50%;display:inline-block;}
+  .dot.artur{background:var(--artur);} .dot.roman{background:var(--roman);}
+
+  .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:22px;}
+  .stat{background:var(--card);border-radius:14px;box-shadow:var(--shadow);padding:16px 16px 14px;}
+  .stat .n{font-family:'Fraunces',serif;font-size:24px;font-weight:600;}
+  .stat .l{font-size:12px;color:var(--ink-soft);margin-top:2px;}
+
+  .form-card{
+    background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);
+    padding:20px 22px;margin-bottom:22px;
+  }
+  .form-title{font-family:'Fraunces',serif;font-weight:600;font-size:16px;margin:0 0 4px;display:flex;align-items:center;gap:10px;}
+  .form-title .edit-tag{
+    font-family:'IBM Plex Mono',monospace;font-size:10.5px;font-weight:600;letter-spacing:.04em;
+    color:var(--gold);background:var(--gold-tint);padding:3px 8px;border-radius:6px;text-transform:uppercase;
+  }
+  .form-title .edit-tag.hidden{display:none;}
+  .form-hint{font-size:12px;color:var(--ink-soft);margin:0 0 14px;}
+  .form-row1{display:grid;grid-template-columns:1.4fr 1fr;gap:10px;margin-bottom:10px;}
+  .form-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr 1fr 1.1fr 1fr auto auto;
+    gap:10px;align-items:end;
+  }
+  .field{display:flex;flex-direction:column;gap:5px;}
+  .field label{font-size:11px;color:var(--ink-soft);font-family:'IBM Plex Mono',monospace;letter-spacing:.03em;}
+  .field input,.field select{
+    font-family:'Manrope',sans-serif;font-size:13.5px;
+    border:1.5px solid var(--line);border-radius:9px;padding:9px 10px;
+    background:#fff;color:var(--ink);outline:none;
+  }
+  .field input:focus,.field select:focus{border-color:var(--leaf);}
+  .add-btn{
+    background:var(--ink);color:#fff;border:none;border-radius:9px;
+    padding:10px 16px;font-family:'Manrope',sans-serif;font-weight:700;font-size:13px;
+    cursor:pointer;white-space:nowrap;transition:transform .15s, background .15s;
+  }
+  .add-btn:hover{background:var(--leaf-deep);transform:translateY(-1px);}
+  .cancel-btn{
+    background:none;border:1.5px solid var(--line);color:var(--ink-soft);border-radius:9px;
+    padding:9px 14px;font-family:'Manrope',sans-serif;font-weight:700;font-size:13px;
+    cursor:pointer;white-space:nowrap;transition:border-color .15s, color .15s;
+  }
+  .cancel-btn.hidden{display:none;}
+  .cancel-btn:hover{border-color:var(--void);color:var(--void);}
+  .row.editing{outline:2px solid var(--gold);outline-offset:1px;}
+
+  .type-legend{display:flex;gap:16px;flex-wrap:wrap;}
+  .type-legend span{font-size:12px;color:var(--ink-soft);display:flex;align-items:center;gap:6px;}
+  .type-legend i{width:12px;height:12px;border-radius:4px;display:inline-block;}
+  .rows-head{display:flex;justify-content:space-between;align-items:center;margin:2px 2px 14px;flex-wrap:wrap;gap:10px;}
+  .export-btn{
+    background:var(--card);border:1.5px solid var(--line);color:var(--ink);
+    font-family:'Manrope',sans-serif;font-weight:700;font-size:12.5px;
+    padding:8px 14px;border-radius:9px;cursor:pointer;transition:border-color .15s, color .15s;
+  }
+  .export-btn:hover{border-color:var(--leaf-deep);color:var(--leaf-deep);}
+
+  .rows{display:flex;flex-direction:column;gap:8px;}
+  .row{
+    background:var(--card);border-radius:12px;box-shadow:var(--shadow);
+    padding:13px 16px;display:grid;
+    grid-template-columns:96px 1fr 110px 96px 110px auto;
+    align-items:center;gap:12px;border-left:5px solid var(--gray);
+    cursor:pointer;transition:box-shadow .15s, transform .15s;
+  }
+  .row:hover{box-shadow:0 1px 2px rgba(22,36,28,.04), 0 10px 26px -10px rgba(22,36,28,.22);transform:translateY(-1px);}
+  .row.void{opacity:.55;}
+  .row.void .title{text-decoration:line-through;}
+  .row.monthly{border-left-color:var(--leaf);}
+  .row.yearly{border-left-color:var(--gold);}
+  .row.onetime{border-left-color:var(--gray);}
+  .row .date{font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--ink-soft);}
+  .row .title{font-size:14px;font-weight:600;}
+  .row .title small{display:block;font-weight:400;color:var(--ink-soft);font-size:12px;margin-top:1px;}
+  .pill{
+    font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:600;
+    padding:4px 9px;border-radius:20px;text-align:center;white-space:nowrap;
+  }
+  .pill.artur{background:var(--artur-tint);color:var(--artur);}
+  .pill.roman{background:var(--roman-tint);color:var(--roman);}
+  .pill.none{background:var(--gray-tint);color:var(--gray);}
+  .amount{font-family:'Fraunces',serif;font-weight:600;font-size:16px;text-align:right;}
+  .status{font-size:11px;font-weight:700;padding:4px 8px;border-radius:7px;text-align:center;}
+  .status.paid{background:var(--leaf-tint);color:var(--leaf-deep);}
+  .status.plan{background:var(--gold-tint);color:var(--gold);}
+  .status.later{background:var(--later-tint);color:var(--later);}
+  .status.void{background:var(--void-tint);color:var(--void);}
+  .del{background:none;border:none;color:var(--line);cursor:pointer;font-size:16px;padding:4px;position:relative;z-index:2;}
+  .del:hover{color:var(--artur);}
+
+  .empty{text-align:center;padding:30px;color:var(--ink-soft);font-size:13.5px;}
+  .footnote{margin-top:18px;font-size:11.5px;color:var(--ink-soft);text-align:center;}
+
+  /* edit modal */
+  .modal-overlay{
+    position:fixed;inset:0;background:rgba(22,36,28,.35);
+    display:flex;align-items:center;justify-content:center;padding:20px;z-index:50;
+  }
+  .modal-overlay.hidden{display:none;}
+  .modal{
+    background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);
+    padding:24px 26px;max-width:420px;width:100%;
+  }
+  .modal h3{font-family:'Fraunces',serif;font-weight:600;font-size:18px;margin:0 0 16px;}
+  .modal .field{margin-bottom:12px;}
+  .status-choices{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:4px;}
+  .status-choice{
+    border:1.5px solid var(--line);border-radius:9px;padding:9px 6px;
+    font-family:'Manrope',sans-serif;font-size:12.5px;font-weight:700;
+    cursor:pointer;text-align:center;background:#fff;color:var(--ink-soft);
+    transition:border-color .15s, background .15s, color .15s;
+  }
+  .status-choice.active.paid{border-color:var(--leaf-deep);background:var(--leaf-tint);color:var(--leaf-deep);}
+  .status-choice.active.plan{border-color:var(--gold);background:var(--gold-tint);color:var(--gold);}
+  .status-choice.active.later{border-color:var(--later);background:var(--later-tint);color:var(--later);}
+  .status-choice.active.void{border-color:var(--void);background:var(--void-tint);color:var(--void);}
+  .modal-actions{display:flex;justify-content:space-between;align-items:center;margin-top:18px;}
+  .modal-save{
+    background:var(--ink);color:#fff;border:none;border-radius:9px;
+    padding:10px 18px;font-family:'Manrope',sans-serif;font-weight:700;font-size:13px;cursor:pointer;
+  }
+  .modal-save:hover{background:var(--leaf-deep);}
+  .modal-cancel{
+    background:none;border:none;color:var(--ink-soft);font-family:'Manrope',sans-serif;
+    font-weight:600;font-size:13px;cursor:pointer;
+  }
+
+  @media (max-width:760px){
+    .form-grid{grid-template-columns:1fr 1fr;}
+    .stats{grid-template-columns:1fr;}
+    .row{grid-template-columns:1fr;gap:6px;text-align:left;}
+    .amount{text-align:left;}
+  }
+</style>
+
+<div class="app">
+  <div class="app-head">
+    <div>
+      <div class="eyebrow">Flower CRM · партнёрская касса</div>
+      <h1>Артур ↔ Роман, 50/50</h1>
+    </div>
+    <div class="conn-block">
+      <button class="conn-badge" id="connBadge" title="Настройки подключения">⚙ <span id="connLabel">не подключено</span></button>
+    </div>
+  </div>
+  <p class="sub">Каждый платёж — своей строкой. Считается автоматически: кто сколько внёс и кто кому должен довнести.</p>
+
+  <div class="settings-panel hidden" id="settingsPanel">
+    <p class="settings-title">Подключение к GitHub</p>
+    <p class="settings-hint">Данные будут храниться в JSON-файле в вашем репозитории — так же, как в редакторе портфолио. Токен хранится только в этом браузере.</p>
+    <div class="settings-grid">
+      <div class="field"><label>Токен GitHub (fine-grained, Contents: Read & write)</label><input id="ghToken" type="password" placeholder="github_pat_..."></div>
+      <div class="field"><label>Владелец</label><input id="ghOwner" placeholder="arturmustaevusa-png"></div>
+      <div class="field"><label>Репозиторий</label><input id="ghRepo" placeholder="flower-crm-finance"></div>
+      <div class="field"><label>Ветка</label><input id="ghBranch" placeholder="main" value="main"></div>
+      <div class="field"><label>Файл</label><input id="ghPath" placeholder="payments.json" value="payments.json"></div>
+    </div>
+    <div class="settings-actions">
+      <button class="settings-save" id="ghSave">Сохранить и проверить</button>
+      <button class="settings-disconnect" id="ghDisconnect">Отключить</button>
+      <span class="settings-status" id="ghStatus"></span>
+    </div>
+  </div>
+
+  <div class="balance-card">
+    <div class="balance-top">
+      <span class="label">Баланс партнёров</span>
+      <span class="balance-verdict" id="verdict">—</span>
+    </div>
+    <div class="scale-track">
+      <div class="scale-artur" id="scaleArtur">0%</div>
+      <div class="scale-mid"></div>
+      <div class="scale-roman" id="scaleRoman">0%</div>
+    </div>
+    <div class="scale-legend">
+      <span class="who"><span class="dot artur"></span>Артур — <b id="arturSum">0 ₽</b></span>
+      <span class="who">Роман — <b id="romanSum">0 ₽</b><span class="dot roman"></span></span>
+    </div>
+  </div>
+
+  <div class="stats">
+    <div class="stat"><div class="n" id="totalPaid">0 ₽</div><div class="l">оплачено фактически</div></div>
+    <div class="stat"><div class="n" id="totalPlan">0 ₽</div><div class="l">запланировано / к оплате</div></div>
+    <div class="stat"><div class="n" id="totalCount">0</div><div class="l">платежей в таблице</div></div>
+  </div>
+
+  <div class="form-card">
+    <p class="form-title">Добавить платёж <span class="edit-tag hidden" id="editTag">Редактирование</span></p>
+    <p class="form-hint" id="formHint">Заполни поля и нажми «Добавить» — или кликни по строке ниже, чтобы её изменить.</p>
+    <div class="form-row1">
+      <div class="field"><label>Статья</label><input id="fTitle" placeholder="Напр. Аренда сервера"></div>
+      <div class="field"><label>Комментарий</label><input id="fNote" placeholder="Необязательно"></div>
+    </div>
+    <div class="form-grid">
+      <div class="field"><label>Дата</label><input id="fDate" type="date"></div>
+      <div class="field"><label>Тип</label>
+        <select id="fType">
+          <option value="monthly">Ежемесячный</option>
+          <option value="yearly">Ежегодный</option>
+          <option value="onetime">Разовый</option>
+        </select>
+      </div>
+      <div class="field"><label>Сумма ₽</label><input id="fAmount" type="number" placeholder="0"></div>
+      <div class="field"><label>Кто платил</label>
+        <select id="fWho">
+          <option value="">— не выбрано —</option>
+          <option value="artur">Артур</option>
+          <option value="roman">Роман</option>
+        </select>
+      </div>
+      <div class="field"><label>Статус</label>
+        <select id="fStatus">
+          <option value="paid">Оплачено</option>
+          <option value="plan">План</option>
+          <option value="later">На потом</option>
+          <option value="void">Неактуально</option>
+        </select>
+      </div>
+      <button class="cancel-btn hidden" id="cancelBtn">Отмена</button>
+      <button class="add-btn" id="addBtn">+ Добавить</button>
+    </div>
+  </div>
+
+  <div class="rows-head">
+    <div class="type-legend">
+      <span><i style="background:var(--leaf)"></i>Ежемесячный</span>
+      <span><i style="background:var(--gold)"></i>Ежегодный</span>
+      <span><i style="background:var(--gray)"></i>Разовый</span>
+    </div>
+    <button class="export-btn" id="exportBtn">⬇ Скачать таблицей (CSV)</button>
+  </div>
+
+  <div class="rows" id="rows"></div>
+  <div class="footnote">Данные общие для Артура и Романа — синхронизируются между вами обоими. Клик по строке — изменить платёж.</div>
+</div>
+
+<script>
+const TYPE_LABEL = {monthly:'ежемесячно', yearly:'ежегодно', onetime:'разово'};
+const WHO_LABEL = {artur:'Артур', roman:'Роман', '':'—'};
+const STATUS_LABEL = {paid:'Оплачено', plan:'План', later:'На потом', void:'Неактуально'};
+const fmt = n => new Intl.NumberFormat('ru-RU').format(Math.round(n)) + ' ₽';
+let editingId = null;
+
+const DEFAULT_PAYMENTS = [
+  {id:'p1', title:'Подписка Claude', note:'период 08.08–08.09.26', date:'2026-08-08', type:'monthly', amount:9500, who:'artur', status:'paid'},
+  {id:'p2', title:'Пополнение Claude', note:'не хватает токенов и лимитов', date:'', type:'onetime', amount:9500, who:'artur', status:'plan'},
+  {id:'p3', title:'Аренда сервера — август', note:'1 бэкап, оплата 27 числа', date:'2026-08-01', type:'monthly', amount:1600, who:'artur', status:'paid'},
+  {id:'p4', title:'Домен', note:'1 год, до 08.2027', date:'2026-08-08', type:'yearly', amount:390, who:'artur', status:'paid'},
+  {id:'p5', title:'Аренда сервера — сентябрь', note:'оплата 27 числа', date:'2026-09-27', type:'monthly', amount:1600, who:'', status:'plan'},
+  {id:'p6', title:'Доп. бэкап №2', note:'в будущем, +к серверу', date:'', type:'monthly', amount:300, who:'', status:'plan'},
+  {id:'p7', title:'Доп. бэкап №3', note:'в будущем, +к серверу', date:'', type:'monthly', amount:300, who:'', status:'plan'},
+];
+
+let payments = [];
+let ghSha = null;
+let storageMode = 'none'; // 'github' | 'claude' | 'none'
+
+function getGh(){
+  try{ return JSON.parse(localStorage.getItem('ghSettings') || 'null'); }
+  catch(e){ return null; }
+}
+function setGh(cfg){ localStorage.setItem('ghSettings', JSON.stringify(cfg)); }
+function clearGh(){ localStorage.removeItem('ghSettings'); }
+
+function ghUrl(cfg){
+  return `https://api.github.com/repos/${cfg.owner}/${cfg.repo}/contents/${cfg.path}`;
+}
+function b64EncodeUnicode(str){ return btoa(unescape(encodeURIComponent(str))); }
+function b64DecodeUnicode(str){ return decodeURIComponent(escape(atob(str.replace(/\n/g,'')))); }
+
+async function ghFetchFile(cfg){
+  const res = await fetch(`${ghUrl(cfg)}?ref=${encodeURIComponent(cfg.branch)}&t=${Date.now()}`, {
+    headers:{ 'Authorization':`Bearer ${cfg.token}`, 'Accept':'application/vnd.github+json' }
+  });
+  if(res.status === 404) return {json:null, sha:null};
+  if(!res.ok) throw new Error(`GitHub GET ${res.status}`);
+  const data = await res.json();
+  const json = JSON.parse(b64DecodeUnicode(data.content));
+  return {json, sha:data.sha};
+}
+async function ghPutFile(cfg, json, sha, message){
+  const body = {
+    message: message || 'update payments.json',
+    content: b64EncodeUnicode(JSON.stringify(json, null, 2)),
+    branch: cfg.branch,
+  };
+  if(sha) body.sha = sha;
+  const res = await fetch(ghUrl(cfg), {
+    method:'PUT',
+    headers:{ 'Authorization':`Bearer ${cfg.token}`, 'Accept':'application/vnd.github+json' },
+    body: JSON.stringify(body),
+  });
+  if(!res.ok){
+    const err = await res.json().catch(()=>({}));
+    throw new Error(err.message || `GitHub PUT ${res.status}`);
+  }
+  const data = await res.json();
+  return data.content.sha;
+}
+
+function setConnLabel(mode, extra){
+  const badge = document.getElementById('connBadge');
+  const label = document.getElementById('connLabel');
+  storageMode = mode;
+  if(mode === 'github'){ badge.classList.add('on'); label.textContent = extra || 'GitHub подключён'; }
+  else if(mode === 'claude'){ badge.classList.remove('on'); label.textContent = 'локально в Claude'; }
+  else { badge.classList.remove('on'); label.textContent = 'не подключено'; }
+}
+
+async function load(){
+  const ghCfg = getGh();
+  if(ghCfg && ghCfg.token && ghCfg.owner && ghCfg.repo){
+    try{
+      const {json, sha} = await ghFetchFile(ghCfg);
+      ghSha = sha;
+      if(json){
+        payments = json;
+      } else {
+        payments = DEFAULT_PAYMENTS;
+        ghSha = await ghPutFile(ghCfg, payments, null, 'init payments.json');
+      }
+      setConnLabel('github', `${ghCfg.owner}/${ghCfg.repo}`);
+      render();
+      return;
+    }catch(e){
+      console.error(e);
+      setConnLabel('none');
+      document.getElementById('ghStatus').textContent = 'Ошибка подключения: ' + e.message;
+      document.getElementById('ghStatus').className = 'settings-status err';
+      document.getElementById('settingsPanel').classList.remove('hidden');
+    }
+  }
+  try{
+    const res = await window.storage.get('payments', true);
+    payments = res && res.value ? JSON.parse(res.value) : DEFAULT_PAYMENTS;
+    setConnLabel('claude');
+  }catch(e){
+    payments = DEFAULT_PAYMENTS;
+    setConnLabel('none');
+  }
+  if(!payments.length) payments = DEFAULT_PAYMENTS;
+  render();
+}
+
+async function save(){
+  if(storageMode === 'github'){
+    const cfg = getGh();
+    if(cfg){
+      try{
+        ghSha = await ghPutFile(cfg, payments, ghSha, 'update payments');
+        return;
+      }catch(e){
+        console.error('github save error', e);
+        alert('Не удалось сохранить в GitHub: ' + e.message);
+        return;
+      }
+    }
+  }
+  try{ await window.storage.set('payments', JSON.stringify(payments), true); }
+  catch(e){ console.error('storage error', e); }
+}
+
+document.getElementById('connBadge').addEventListener('click', ()=>{
+  document.getElementById('settingsPanel').classList.toggle('hidden');
+});
+document.getElementById('ghSave').addEventListener('click', async ()=>{
+  const cfg = {
+    token: document.getElementById('ghToken').value.trim(),
+    owner: document.getElementById('ghOwner').value.trim(),
+    repo: document.getElementById('ghRepo').value.trim(),
+    branch: document.getElementById('ghBranch').value.trim() || 'main',
+    path: document.getElementById('ghPath').value.trim() || 'payments.json',
+  };
+  const statusEl = document.getElementById('ghStatus');
+  if(!cfg.token || !cfg.owner || !cfg.repo){
+    statusEl.textContent = 'Заполни токен, владельца и репозиторий';
+    statusEl.className = 'settings-status err';
+    return;
+  }
+  statusEl.textContent = 'Проверяю...';
+  statusEl.className = 'settings-status';
+  try{
+    const {json, sha} = await ghFetchFile(cfg);
+    setGh(cfg);
+    ghSha = sha;
+    payments = json || payments;
+    if(!json){ ghSha = await ghPutFile(cfg, payments, null, 'init payments.json'); }
+    setConnLabel('github', `${cfg.owner}/${cfg.repo}`);
+    statusEl.textContent = 'Подключено ✓';
+    statusEl.className = 'settings-status ok';
+    render();
+  }catch(e){
+    statusEl.textContent = 'Ошибка: ' + e.message;
+    statusEl.className = 'settings-status err';
+  }
+});
+document.getElementById('ghDisconnect').addEventListener('click', ()=>{
+  clearGh();
+  ghSha = null;
+  setConnLabel('none');
+  document.getElementById('ghStatus').textContent = 'Отключено';
+  document.getElementById('ghStatus').className = 'settings-status';
+  load();
+});
+
+function render(){
+  const rowsEl = document.getElementById('rows');
+  rowsEl.innerHTML = '';
+  if(!payments.length){
+    rowsEl.innerHTML = '<div class="empty">Пока пусто — добавьте первый платёж выше.</div>';
+  }
+  payments.slice().sort((a,b)=>(b.date||'').localeCompare(a.date||'')).forEach(p=>{
+    const div = document.createElement('div');
+    div.className = 'row ' + p.type + (p.status==='void' ? ' void' : '');
+    div.dataset.id = p.id;
+    div.innerHTML = `
+      <div class="date">${p.date ? p.date.split('-').reverse().join('.') : '—'}</div>
+      <div class="title">${p.title}${p.note ? `<small>${p.note} · ${TYPE_LABEL[p.type]}</small>` : `<small>${TYPE_LABEL[p.type]}</small>`}</div>
+      <div class="pill ${p.who||'none'}">${WHO_LABEL[p.who]}</div>
+      <div class="amount">${fmt(p.amount)}</div>
+      <div class="status ${p.status}">${STATUS_LABEL[p.status]}</div>
+      <button class="del" data-id="${p.id}" title="Удалить">✕</button>
+    `;
+    div.classList.toggle('editing', p.id === editingId);
+    div.addEventListener('click', (e)=>{
+      if(e.target.closest('.del')) return;
+      startEdit(p.id);
+    });
+    rowsEl.appendChild(div);
+  });
+  rowsEl.querySelectorAll('.del').forEach(btn=>{
+    btn.addEventListener('click', (e)=>{
+      e.stopPropagation();
+      payments = payments.filter(p=>p.id !== btn.dataset.id);
+      save();
+      if(editingId === btn.dataset.id) stopEdit(); else render();
+    });
+  });
+  computeStats();
+}
+
+function computeStats(){
+  const paid = payments.filter(p=>p.status==='paid');
+  const plan = payments.filter(p=>p.status==='plan' || p.status==='later');
+  const totalPaid = paid.reduce((s,p)=>s+Number(p.amount||0),0);
+  const totalPlan = plan.reduce((s,p)=>s+Number(p.amount||0),0);
+  const arturPaid = paid.filter(p=>p.who==='artur').reduce((s,p)=>s+Number(p.amount||0),0);
+  const romanPaid = paid.filter(p=>p.who==='roman').reduce((s,p)=>s+Number(p.amount||0),0);
+
+  document.getElementById('totalPaid').textContent = fmt(totalPaid);
+  document.getElementById('totalPlan').textContent = fmt(totalPlan);
+  document.getElementById('totalCount').textContent = payments.length;
+  document.getElementById('arturSum').textContent = fmt(arturPaid);
+  document.getElementById('romanSum').textContent = fmt(romanPaid);
+
+  const sum = arturPaid + romanPaid;
+  let arturPct = 50, romanPct = 50;
+  if(sum > 0){
+    arturPct = Math.round((arturPaid/sum)*1000)/10;
+    romanPct = Math.round((romanPaid/sum)*1000)/10;
+  }
+  document.getElementById('scaleArtur').style.width = arturPct + '%';
+  document.getElementById('scaleRoman').style.width = romanPct + '%';
+  document.getElementById('scaleArtur').textContent = arturPaid>0 ? fmt(arturPaid) : '';
+  document.getElementById('scaleRoman').textContent = romanPaid>0 ? fmt(romanPaid) : '';
+
+  const half = sum/2;
+  const verdictEl = document.getElementById('verdict');
+  const diff = Math.abs(arturPaid - half);
+  if(sum === 0){
+    verdictEl.textContent = 'платежей ещё нет';
+  } else if(diff < 1){
+    verdictEl.textContent = 'баланс ровный ⚖️';
+  } else if(arturPaid > half){
+    verdictEl.textContent = `Роман должен довнести ${fmt(diff)}`;
+  } else {
+    verdictEl.textContent = `Артур должен довнести ${fmt(diff)}`;
+  }
+}
+
+const fTitle = document.getElementById('fTitle');
+const fNote = document.getElementById('fNote');
+const fDate = document.getElementById('fDate');
+const fType = document.getElementById('fType');
+const fAmount = document.getElementById('fAmount');
+const fWho = document.getElementById('fWho');
+const fStatus = document.getElementById('fStatus');
+const addBtn = document.getElementById('addBtn');
+const cancelBtn = document.getElementById('cancelBtn');
+const editTag = document.getElementById('editTag');
+const formHint = document.getElementById('formHint');
+
+function todayStr(){
+  const d = new Date();
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+}
+
+function clearForm(){
+  fTitle.value = ''; fNote.value = ''; fDate.value = todayStr();
+  fType.value = 'monthly'; fAmount.value = ''; fWho.value = ''; fStatus.value = 'paid';
+}
+
+function startEdit(id){
+  const p = payments.find(x=>x.id===id);
+  if(!p) return;
+  editingId = id;
+  fTitle.value = p.title;
+  fNote.value = p.note || '';
+  fDate.value = p.date || '';
+  fType.value = p.type;
+  fAmount.value = p.amount;
+  fWho.value = p.who || '';
+  fStatus.value = p.status;
+  addBtn.textContent = '✓ Сохранить изменения';
+  cancelBtn.classList.remove('hidden');
+  editTag.classList.remove('hidden');
+  formHint.textContent = `Правишь платёж «${p.title}» — измени поля и нажми «Сохранить изменения».`;
+  render();
+  document.querySelector('.form-card').scrollIntoView({behavior:'smooth', block:'start'});
+  fTitle.focus();
+}
+
+function stopEdit(){
+  editingId = null;
+  addBtn.textContent = '+ Добавить';
+  cancelBtn.classList.add('hidden');
+  editTag.classList.add('hidden');
+  formHint.textContent = 'Заполни поля и нажми «Добавить» — или кликни по строке ниже, чтобы её изменить.';
+  clearForm();
+  render();
+}
+
+addBtn.addEventListener('click', ()=>{
+  const title = fTitle.value.trim();
+  const amount = Number(fAmount.value);
+  if(!title || !amount){
+    fTitle.focus();
+    return;
+  }
+  const data = {
+    title,
+    note: fNote.value.trim(),
+    date: fDate.value,
+    type: fType.value,
+    amount,
+    who: fWho.value,
+    status: fStatus.value,
+  };
+  if(editingId){
+    const p = payments.find(x=>x.id===editingId);
+    if(p) Object.assign(p, data);
+  } else {
+    payments.push({id:'p'+Date.now(), ...data});
+  }
+  save();
+  stopEdit();
+});
+
+cancelBtn.addEventListener('click', stopEdit);
+
+document.getElementById('exportBtn').addEventListener('click', ()=>{
+  const headers = ['Дата','Статья','Комментарий','Тип','Сумма','Кто оплатил','Статус'];
+  const escapeCsv = v => {
+    const s = String(v ?? '');
+    return /[",\n;]/.test(s) ? '"' + s.replace(/"/g,'""') + '"' : s;
+  };
+  const lines = [headers.join(',')];
+  payments.slice().sort((a,b)=>(a.date||'').localeCompare(b.date||'')).forEach(p=>{
+    lines.push([
+      p.date || '',
+      p.title,
+      p.note || '',
+      TYPE_LABEL[p.type],
+      p.amount,
+      WHO_LABEL[p.who],
+      STATUS_LABEL[p.status],
+    ].map(escapeCsv).join(','));
+  });
+  const csv = '\uFEFF' + lines.join('\n');
+  const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `flower-crm-payments-${new Date().toISOString().slice(0,10)}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+});
+
+load();
+clearForm();
+</script>
