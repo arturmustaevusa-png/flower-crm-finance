@@ -6,6 +6,7 @@
 <title>Flower CRM — партнёрская касса</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Manrope:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
 <style>
   :root{
     --paper:#FBFBF7;
@@ -198,6 +199,7 @@
     padding:8px 14px;border-radius:9px;cursor:pointer;transition:border-color .15s, color .15s;
   }
   .export-btn:hover{border-color:var(--leaf-deep);color:var(--leaf-deep);}
+  .export-btn.secondary{color:var(--ink-soft);font-size:11.5px;padding:8px 12px;}
 
   .rows{display:flex;flex-direction:column;gap:8px;}
   .row{
@@ -305,11 +307,25 @@
     </div>
     <div class="header-actions">
       <button class="conn-badge" id="trashBadge" title="Журнал удалённых записей">🗑 История<span id="trashCount"></span></button>
+      <button class="conn-badge" id="connBadge" title="Токен GitHub">🔑 <span id="connLabel">токен не введён</span></button>
     </div>
   </div>
   <p class="sub">Каждый платёж — своей строкой. Считается автоматически: кто сколько внёс и кто кому должен довнести.</p>
 
   <div class="load-error hidden" id="loadError"></div>
+
+  <div class="settings-panel hidden" id="settingsPanel">
+    <p class="settings-title">Токен GitHub</p>
+    <p class="settings-hint">Репозиторий и файл уже настроены в коде — нужен только личный токен доступа (fine-grained, права Contents: Read & write на репозиторий <b>flower-crm-finance</b>). Токен хранится только в этом браузере, никуда не отправляется, кроме самого GitHub.</p>
+    <div class="settings-grid" style="grid-template-columns:1fr;">
+      <div class="field"><label>Токен (github_pat_...)</label><input id="ghToken" type="password" placeholder="github_pat_..."></div>
+    </div>
+    <div class="settings-actions">
+      <button class="settings-save" id="ghSave">Сохранить и проверить</button>
+      <button class="settings-disconnect" id="ghDisconnect">Убрать токен</button>
+      <span class="settings-status" id="ghStatus"></span>
+    </div>
+  </div>
 
   <div class="trash-panel hidden" id="trashPanel">
     <p class="settings-title">Журнал удалённых записей</p>
@@ -382,7 +398,8 @@
   <div class="year-tabs" id="statusTabs"></div>
 
   <div class="rows-head">
-    <button class="export-btn" id="exportBtn">⬇ Скачать таблицей (CSV)</button>
+    <button class="export-btn secondary" id="exportCsvBtn">CSV</button>
+    <button class="export-btn" id="exportBtn">⬇ Скачать Excel (.xlsx)</button>
   </div>
 
   <div class="rows" id="rows"></div>
@@ -437,14 +454,19 @@ function renderStatusTabs(){
   });
 }
 
-const GH_CONFIG = {
-  token: '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',
+const GH_BASE = {
   owner: 'arturmustaevusa-png',
   repo: 'flower-crm-finance',
   branch: 'main',
   path: 'payments.json',
 };
-function getGh(){ return GH_CONFIG; }
+function getGh(){
+  const token = localStorage.getItem('ghToken');
+  if(!token) return null;
+  return { ...GH_BASE, token };
+}
+function setGhToken(token){ localStorage.setItem('ghToken', token); }
+function clearGhToken(){ localStorage.removeItem('ghToken'); }
 
 function ghUrl(cfg){
   return `https://api.github.com/repos/${cfg.owner}/${cfg.repo}/contents/${cfg.path}`;
@@ -503,26 +525,42 @@ function showLoadError(msg){
 
 const hasWindowStorage = () => typeof window !== 'undefined' && !!window.storage;
 
+function setConnLabel(text, connected){
+  const badge = document.getElementById('connBadge');
+  const label = document.getElementById('connLabel');
+  if(!badge || !label) return;
+  badge.classList.toggle('on', !!connected);
+  label.textContent = text;
+}
+
 async function load(){
-  try{
-    const {json, sha} = await ghFetchFile(GH_CONFIG);
-    ghSha = sha;
-    if(json){
-      const norm = normalizeStore(json);
-      payments = norm.payments;
-      trash = norm.trash;
-    } else {
-      payments = DEFAULT_PAYMENTS;
-      trash = [];
-      ghSha = await ghPutFile(GH_CONFIG, {payments, trash}, null, 'init payments.json');
+  const cfg = getGh();
+  if(cfg){
+    try{
+      const {json, sha} = await ghFetchFile(cfg);
+      ghSha = sha;
+      if(json){
+        const norm = normalizeStore(json);
+        payments = norm.payments;
+        trash = norm.trash;
+      } else {
+        payments = DEFAULT_PAYMENTS;
+        trash = [];
+        ghSha = await ghPutFile(cfg, {payments, trash}, null, 'init payments.json');
+      }
+      storageMode = 'github';
+      showLoadError(null);
+      setConnLabel('подключено', true);
+      render();
+      return;
+    }catch(e){
+      console.error('GitHub load error', e);
+      showLoadError('Не удалось загрузить данные из GitHub: ' + e.message + '. Показаны последние известные данные — они могут быть не самыми свежими. Проверь токен в настройках (🔑).');
+      setConnLabel('ошибка токена', false);
+      document.getElementById('settingsPanel').classList.remove('hidden');
     }
-    storageMode = 'github';
-    showLoadError(null);
-    render();
-    return;
-  }catch(e){
-    console.error('GitHub load error', e);
-    showLoadError('Не удалось загрузить данные из GitHub: ' + e.message + '. Показаны последние известные данные — они могут быть не самыми свежими.');
+  } else {
+    setConnLabel('токен не введён', false);
   }
   if(hasWindowStorage()){
     try{
@@ -546,9 +584,10 @@ async function load(){
 }
 
 async function save(){
-  if(storageMode === 'github'){
+  const cfg = getGh();
+  if(storageMode === 'github' && cfg){
     try{
-      ghSha = await ghPutFile(GH_CONFIG, {payments, trash}, ghSha, 'update payments');
+      ghSha = await ghPutFile(cfg, {payments, trash}, ghSha, 'update payments');
       showLoadError(null);
       return;
     }catch(e){
@@ -565,6 +604,52 @@ async function save(){
     catch(e){ console.error('storage error', e); }
   }
 }
+
+document.getElementById('connBadge').addEventListener('click', ()=>{
+  document.getElementById('settingsPanel').classList.toggle('hidden');
+});
+document.getElementById('ghSave').addEventListener('click', async ()=>{
+  const token = document.getElementById('ghToken').value.trim();
+  const statusEl = document.getElementById('ghStatus');
+  if(!token){
+    statusEl.textContent = 'Впиши токен';
+    statusEl.className = 'settings-status err';
+    return;
+  }
+  statusEl.textContent = 'Проверяю...';
+  statusEl.className = 'settings-status';
+  const cfg = { ...GH_BASE, token };
+  try{
+    const {json, sha} = await ghFetchFile(cfg);
+    setGhToken(token);
+    ghSha = sha;
+    if(json){
+      const norm = normalizeStore(json);
+      payments = norm.payments;
+      trash = norm.trash;
+    } else {
+      ghSha = await ghPutFile(cfg, {payments, trash}, null, 'init payments.json');
+    }
+    storageMode = 'github';
+    statusEl.textContent = 'Подключено ✓';
+    statusEl.className = 'settings-status ok';
+    setConnLabel('подключено', true);
+    showLoadError(null);
+    document.getElementById('ghToken').value = '';
+    render();
+  }catch(e){
+    statusEl.textContent = 'Ошибка: ' + e.message;
+    statusEl.className = 'settings-status err';
+  }
+});
+document.getElementById('ghDisconnect').addEventListener('click', ()=>{
+  clearGhToken();
+  ghSha = null;
+  setConnLabel('токен не введён', false);
+  document.getElementById('ghStatus').textContent = 'Токен убран';
+  document.getElementById('ghStatus').className = 'settings-status';
+  load();
+});
 
 document.getElementById('trashBadge').addEventListener('click', ()=>{
   document.getElementById('trashPanel').classList.toggle('hidden');
@@ -794,7 +879,7 @@ cancelBtn.addEventListener('click', stopEdit);
   el.addEventListener('change', () => el.classList.remove('err'));
 });
 
-document.getElementById('exportBtn').addEventListener('click', ()=>{
+document.getElementById('exportCsvBtn').addEventListener('click', ()=>{
   const headers = ['Дата','Статья','Комментарий','Тип','Сумма','Кто оплатил','Статус'];
   const escapeCsv = v => {
     const s = String(v ?? '');
@@ -802,6 +887,7 @@ document.getElementById('exportBtn').addEventListener('click', ()=>{
   };
   const lines = [headers.join(',')];
   payments.slice().sort((a,b)=>(a.date||'').localeCompare(b.date||'')).forEach(p=>{
+    const info = statusInfo(p);
     lines.push([
       p.date || '',
       p.title,
@@ -809,7 +895,7 @@ document.getElementById('exportBtn').addEventListener('click', ()=>{
       TYPE_LABEL[p.type],
       p.amount,
       WHO_LABEL[p.who],
-      STATUS_LABEL[p.status] || p.status,
+      info.label,
     ].map(escapeCsv).join(','));
   });
   const csv = '\uFEFF' + lines.join('\n');
@@ -822,6 +908,88 @@ document.getElementById('exportBtn').addEventListener('click', ()=>{
   a.click();
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
+});
+
+document.getElementById('exportBtn').addEventListener('click', async ()=>{
+  const btn = document.getElementById('exportBtn');
+  const oldText = btn.textContent;
+  btn.textContent = 'Готовлю файл...';
+  btn.disabled = true;
+  try{
+    const wb = new ExcelJS.Workbook();
+    wb.creator = 'Flower CRM';
+    const sheet = wb.addWorksheet('Платежи', { views:[{state:'frozen', ySplit:1}] });
+
+    sheet.columns = [
+      { header:'Дата', key:'date', width:12 },
+      { header:'Статья', key:'title', width:32 },
+      { header:'Комментарий', key:'note', width:34 },
+      { header:'Тип', key:'type', width:14 },
+      { header:'Сумма, ₽', key:'amount', width:14 },
+      { header:'Кто оплатил', key:'who', width:14 },
+      { header:'Статус', key:'status', width:18 },
+    ];
+
+    const headerRow = sheet.getRow(1);
+    headerRow.eachCell(cell=>{
+      cell.font = { bold:true, color:{argb:'FFFFFFFF'} };
+      cell.fill = { type:'pattern', pattern:'solid', fgColor:{argb:'FF16241C'} };
+      cell.alignment = { vertical:'middle' };
+    });
+    headerRow.height = 20;
+
+    const colorFor = { paid:'FF5C9A2A', plan:'FFC9942F', overdue:'FFB14B3D' };
+
+    payments.slice().sort((a,b)=>(a.date||'').localeCompare(b.date||'')).forEach(p=>{
+      const info = statusInfo(p);
+      const row = sheet.addRow({
+        date: p.date ? p.date.split('-').reverse().join('.') : '—',
+        title: p.title,
+        note: p.note || '',
+        type: TYPE_LABEL[p.type],
+        amount: Number(p.amount) || 0,
+        who: WHO_LABEL[p.who],
+        status: info.label,
+      });
+      row.getCell('amount').numFmt = '#,##0 ₽';
+      row.getCell('status').font = { bold:true, color:{argb: colorFor[info.cls] || 'FF16241C'} };
+      row.eachCell(c => { c.alignment = { vertical:'middle' }; });
+    });
+
+    const paidTotal = payments.filter(p=>p.status==='paid').reduce((s,p)=>s+Number(p.amount||0),0);
+    const planTotal = payments.filter(p=>p.status!=='paid').reduce((s,p)=>s+Number(p.amount||0),0);
+    const arturPaid = payments.filter(p=>p.status==='paid'&&p.who==='artur').reduce((s,p)=>s+Number(p.amount||0),0);
+    const romanPaid = payments.filter(p=>p.status==='paid'&&p.who==='roman').reduce((s,p)=>s+Number(p.amount||0),0);
+
+    sheet.addRow({});
+    [
+      ['Оплачено фактически', paidTotal],
+      ['Осталось к оплате (план)', planTotal],
+      ['Внёс Артур', arturPaid],
+      ['Внёс Роман', romanPaid],
+    ].forEach(([label, val])=>{
+      const r = sheet.addRow({ title: label, amount: val });
+      r.font = { bold:true };
+      r.getCell('amount').numFmt = '#,##0 ₽';
+    });
+
+    const buf = await wb.xlsx.writeBuffer();
+    const blob = new Blob([buf], { type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `flower-crm-payments-${new Date().toISOString().slice(0,10)}.xlsx`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }catch(e){
+    console.error('excel export error', e);
+    alert('Не удалось собрать Excel-файл: ' + e.message);
+  }finally{
+    btn.textContent = oldText;
+    btn.disabled = false;
+  }
 });
 
 load();
