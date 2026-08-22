@@ -79,6 +79,16 @@
       "amount": 1000,
       "who": "roman",
       "status": "paid"
+    },
+    {
+      "id": "p1787408094482",
+      "title": "Аренда 1 гб s3 диска в месяц",
+      "note": "",
+      "date": "2026-08-22",
+      "type": "monthly",
+      "amount": 1,
+      "who": "artur",
+      "status": "paid"
     }
   ],
   "trash": []
